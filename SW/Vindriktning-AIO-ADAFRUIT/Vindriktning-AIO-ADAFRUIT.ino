@@ -36,6 +36,7 @@
 
 #define PIN_BUZZER 2
 #define PIN_AMBIENT_LIGHT 33
+#define PIN_BUTTON 5
 
 
 /* Nastaveni RGB LED */
@@ -48,7 +49,12 @@
 #define PIN_LED 25
 #define PM_LED 0
 
-bool lights_on = true;
+volatile bool lights_on = true;
+#ifdef button
+volatile bool button_pressed = false;
+unsigned long button_time = 0;
+unsigned long last_button_time = 0;
+#endif
 
 #define ADA_URI "https://io.adafruit.com/api/v2/" IO_USERNAME
 #define CO2_FEED  "co2"
@@ -206,6 +212,19 @@ uint32_t YELLOW = pixels.Color(255, 255, 0);
 uint32_t ORANGE = pixels.Color(255, 128, 0);
 uint32_t BLUE = pixels.Color(0, 0, 255);
 
+#ifdef button
+void IRAM_ATTR toggle_lights()
+{
+  button_time = millis();
+  if (button_time - last_button_time > 50)
+  {
+    lights_on = !lights_on;
+    button_pressed = true;
+    last_button_time = button_time;
+  }
+}
+#endif
+
 void setup()
 {
   Serial.begin(115200);
@@ -218,6 +237,11 @@ void setup()
   pinMode(PIN_FAN, OUTPUT); // Ventilator pro cidlo prasnosti PM1006
   pinMode(PIN_AMBIENT_LIGHT, INPUT);  // Ambient light
   analogReadResolution(12);
+
+  #ifdef button
+  pinMode(PIN_BUTTON, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(PIN_BUTTON), toggle_lights, RISING);
+  #endif
 
   /*-------------- PM1006 - cidlo prasnosti ---------------*/
   Serial2.begin(PM1006::BIT_RATE, SERIAL_8N1, RXD2, TXD2); // cidlo prasnosti PM1006
@@ -359,12 +383,23 @@ void loop()
     last_pm_event = t_now;
     process_pm_event();
   }
+
+  #ifdef button
+  if (button_pressed)
+  {
+    set_LEDs();
+    button_pressed = false;
+    Serial.println("Lights toggled!");
+  }
+  #endif
+
   t_now = millis();
   if (t_now - last_al_event >= INTERVAL_AL)
   {
     last_al_event = t_now;
     set_LEDs();
   }
+
   #ifdef buzzer
   t_now = millis();
   if (co2_alarm_on && ((t_now - last_co2_alarm) >= ALARM_LENGTH))
@@ -511,7 +546,6 @@ void process_pm_event()
     }
     #ifdef ada
     sendHTTPData();
-    lights_on = getAdaLightsOn();
     #endif
     // schedule fan off
     pm_status = PM_STATUS_FAN_AFTER;
