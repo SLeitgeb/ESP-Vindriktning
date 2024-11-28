@@ -106,6 +106,7 @@ Adafruit_BMP280 bmp;
 #include <SPI.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include <math.h>
 #endif
 
 /* LaskaKit ESP-VINDRIKTNING s čidlem CO2/teploty/vlhkosti SCD41 */
@@ -616,15 +617,17 @@ void process_pm_event()
   display.setTextSize(2);             // Normal 1:1 pixel scale
   display.setTextColor(SSD1306_WHITE);        // Draw white text
 
-  display.setCursor(5,8);             // Start at top-left corner
+  int co2_decimals = co2 == -1 ? 2 : ceil(log10(co2));
+  display.setCursor(64 - (12 * co2_decimals), 8);
   display.println(String(co2));
-  display.setCursor(92,8);             // Start at top-left corner
+  int pm_decimals = ceil(log10(pm2_5));
+  display.setCursor(128 - (12 * pm_decimals), 8);
   display.println(String(pm2_5));
 
   display.setTextSize(1);
-  display.setCursor(40,24);
+  display.setCursor(45,24);
   display.println("ppm");
-  display.setCursor(92,24);
+  display.setCursor(97,24);
   display.println("mg/m3");
   #endif
   
