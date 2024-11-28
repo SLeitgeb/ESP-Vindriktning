@@ -175,12 +175,19 @@ SCD4x SCD41;
 
 #ifdef buzzer
 #define BUZZER_FREQUENCY 4000
-#define BUZZER_VOLUME 16
+#define CO2_BUZZER_VOLUME 16
 #define CO2_ALARM 1500 // ppm level to trigger alarm
 #define CO2_ALARM_DELAY 900000 // 15 min
-#define ALARM_LENGTH 2000
+#define CO2_ALARM_LENGTH 2000
 unsigned long last_co2_alarm = 1 << 31;
 bool co2_alarm_on = false;
+
+#define PM_BUZZER_VOLUME 128
+#define PM_ALARM 850 // ppm level to trigger alarm
+#define PM_ALARM_DELAY 300000 // 5 min
+#define PM_ALARM_LENGTH 5000
+unsigned long last_pm_alarm = 1 << 31;
+bool pm_alarm_on = false;
 #endif
 #endif
 
@@ -402,10 +409,17 @@ void loop()
 
   #ifdef buzzer
   t_now = millis();
-  if (co2_alarm_on && ((t_now - last_co2_alarm) >= ALARM_LENGTH))
+  if (co2_alarm_on && ((t_now - last_co2_alarm) >= CO2_ALARM_LENGTH))
   {
     Serial.println("CO2 alarm off.");
     co2_alarm_on = false;
+    ledcWrite(PIN_BUZZER, 0);
+  }
+
+  if (pm_alarm_on && ((t_now - last_pm_alarm) >= PM_ALARM_LENGTH))
+  {
+    Serial.println("PM alarm off.");
+    pm_alarm_on = false;
     ledcWrite(PIN_BUZZER, 0);
   }
   #endif
@@ -478,7 +492,7 @@ bool measure_extra_data()
   )
   {
     Serial.println("CO2 alarm triggered!");
-    ledcWrite(PIN_BUZZER, BUZZER_VOLUME);
+    ledcWrite(PIN_BUZZER, CO2_BUZZER_VOLUME);
     co2_alarm_on = true;
     last_co2_alarm = millis();
   }
@@ -537,6 +551,20 @@ void process_pm_event()
 
       #ifdef uart
       Serial.print("PM2.5: "); Serial.print(pm2_5); Serial.println(" ppm");
+      #endif
+
+      #ifdef buzzer
+      if (
+        pm2_5 > PM_ALARM
+        && pm2_5 != 65535
+        && ((millis() - last_pm_alarm) > PM_ALARM_DELAY)
+      )
+      {
+        Serial.println("PM alarm triggered!");
+        ledcWrite(PIN_BUZZER, PM_BUZZER_VOLUME);
+        pm_alarm_on = true;
+        last_pm_alarm = millis();
+      }
       #endif
     }
     else
