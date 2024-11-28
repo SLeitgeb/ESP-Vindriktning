@@ -585,17 +585,19 @@ void process_pm_event()
 
   #ifdef scd41
   display.clearDisplay();
-  display.setTextSize(1);             // Normal 1:1 pixel scale
+  display.setTextSize(2);             // Normal 1:1 pixel scale
   display.setTextColor(SSD1306_WHITE);        // Draw white text
 
-  display.setCursor(5,5);             // Start at top-left corner
-  display.println(String(co2) + "ppm");
-  display.setCursor(69,5);             // Start at top-left corner
-  display.println(String(temp) + "degC");  
-  display.setCursor(85,21);             // Start at top-left corner
-  display.println(String(humidity) + "%");
-  display.setCursor(5,21);             // Start at top-left corner
-  display.println(String(pm2_5) + "mg/m3");
+  display.setCursor(5,8);             // Start at top-left corner
+  display.println(String(co2));
+  display.setCursor(92,8);             // Start at top-left corner
+  display.println(String(pm2_5));
+
+  display.setTextSize(1);
+  display.setCursor(40,24);
+  display.println("ppm");
+  display.setCursor(92,24);
+  display.println("mg/m3");
   #endif
   
   display.display();  
