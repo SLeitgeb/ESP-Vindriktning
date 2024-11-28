@@ -8,4 +8,6 @@
 #define scd41
 // #define sht40
 // #define oled
+// #define display_off
 #define buzzer
+// #define button

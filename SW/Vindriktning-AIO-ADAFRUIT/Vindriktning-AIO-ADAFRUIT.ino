@@ -383,6 +383,76 @@ void light_sequence()
   pixels.show();
 }
 
+#ifdef oled
+void dim_display(bool dim)
+{
+  display.ssd1306_command(0x81);
+  display.ssd1306_command(dim ? 0 : 0x8F);
+  display.ssd1306_command(0xD9);
+  display.ssd1306_command(dim ? 0 : 34);
+}
+
+void switch_display(bool on)
+{
+  if (on)
+  {
+    display_data();
+  }
+  else
+  {
+    display.clearDisplay();
+    display.display();
+    delay(1);
+  }
+}
+
+void display_data()
+{
+  display.clearDisplay();
+  display.setTextSize(2);             // Normal 1:1 pixel scale
+  display.setTextColor(SSD1306_WHITE);        // Draw white text
+
+  display.setCursor(5,8);             // Start at top-left corner
+  display.println(String(pm2_5) + "mg/m3");
+
+  #ifdef sht40
+  display.clearDisplay();
+  display.setTextSize(1);             // Normal 1:1 pixel scale
+  display.setTextColor(SSD1306_WHITE);        // Draw white text
+
+  display.setCursor(69,5);             // Start at top-left corner
+  display.println(String(temp) + "degC");  
+  display.setCursor(85,21);             // Start at top-left corner
+  display.println(String(humidity) + "%");
+  display.setCursor(5,21);             // Start at top-left corner
+  display.println(String(pm2_5) + "mg/m3");
+  #endif
+
+  #ifdef scd41
+  display.clearDisplay();
+  display.setTextSize(2);             // Normal 1:1 pixel scale
+  display.setTextColor(SSD1306_WHITE);        // Draw white text
+
+  int co2_decimals = co2 == -1 ? 2 : ceil(log10(co2));
+  display.setCursor(64 - (12 * co2_decimals), 8);
+  display.println(String(co2));
+
+  int pm_decimals = ceil(log10(pm2_5));
+  display.setCursor(128 - (12 * pm_decimals), 8);
+  display.println(String(pm2_5));
+
+  display.setTextSize(1);
+  display.setCursor(45,24);
+  display.println("ppm");
+  display.setCursor(97,24);
+  display.println("mg/m3");
+  #endif
+  
+  display.display();  
+  delay(1);
+}
+#endif
+
 void loop()
 {
   unsigned long t_now = millis();
@@ -396,8 +466,14 @@ void loop()
   if (button_pressed)
   {
     set_LEDs();
+    #ifdef oled
+    #ifdef display_off
+    switch_display(lights_on);
+    #else
+    dim_display(!lights_on);
+    #endif
+    #endif
     button_pressed = false;
-    Serial.println("Lights toggled!");
   }
   #endif
 
@@ -592,47 +668,11 @@ void process_pm_event()
 
   /*------------- OLED Display -------------*/
   #ifdef oled
-  display.clearDisplay();
-  display.setTextSize(2);             // Normal 1:1 pixel scale
-  display.setTextColor(SSD1306_WHITE);        // Draw white text
-
-  display.setCursor(5,8);             // Start at top-left corner
-  display.println(String(pm2_5) + "mg/m3");
-
-  #ifdef sht40
-  display.clearDisplay();
-  display.setTextSize(1);             // Normal 1:1 pixel scale
-  display.setTextColor(SSD1306_WHITE);        // Draw white text
-
-  display.setCursor(69,5);             // Start at top-left corner
-  display.println(String(temp) + "degC");  
-  display.setCursor(85,21);             // Start at top-left corner
-  display.println(String(humidity) + "%");
-  display.setCursor(5,21);             // Start at top-left corner
-  display.println(String(pm2_5) + "mg/m3");
+  #ifdef display_off
+  if (lights_on) display_data();
+  #else
+  display_data();
   #endif
-
-  #ifdef scd41
-  display.clearDisplay();
-  display.setTextSize(2);             // Normal 1:1 pixel scale
-  display.setTextColor(SSD1306_WHITE);        // Draw white text
-
-  int co2_decimals = co2 == -1 ? 2 : ceil(log10(co2));
-  display.setCursor(64 - (12 * co2_decimals), 8);
-  display.println(String(co2));
-  int pm_decimals = ceil(log10(pm2_5));
-  display.setCursor(128 - (12 * pm_decimals), 8);
-  display.println(String(pm2_5));
-
-  display.setTextSize(1);
-  display.setCursor(45,24);
-  display.println("ppm");
-  display.setCursor(97,24);
-  display.println("mg/m3");
-  #endif
-  
-  display.display();  
-  delay(1);
   #endif
 }
 
