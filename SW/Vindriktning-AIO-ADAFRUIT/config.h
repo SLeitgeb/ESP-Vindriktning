@@ -2,6 +2,8 @@
 #define WIFI_PASS "<YOUR_WIFI_PASSWORD>"
 #define IO_USERNAME "<YOUR_ADAFRUIT_IO_USERNAME>"
 #define IO_KEY "<YOUR_ADAFRUIT_IO_API_KEY>"
+#define WELCOME_MESSAGE "Hi there."
+#define WELCOME_FONT u8g2_font_helvB12_tf
 
 #define uart
 #define ada
