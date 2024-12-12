@@ -41,10 +41,11 @@
 
 /* Nastaveni RGB LED */
 #define BRIGHTNESS_DAY 55   // Day brightness
+#define BRIGHTNESS_DAY_LOW 25
 #define BRIGHTNESS_NIGHT 5  // Night brightness
-#define BRIGHTNESS_DIFF (BRIGHTNESS_DAY - BRIGHTNESS_NIGHT)
-#define DAY_MIN_AL 4000.0   // Maximum ambient light for day
-#define DAY_MAX_AL 1000.0   // Maximum ambient light for day
+#define BRIGHTNESS_DIFF (BRIGHTNESS_DAY - BRIGHTNESS_DAY_LOW)
+#define DAY_MIN_AL 4095.0   // Maximum ambient light for day
+#define DAY_MAX_AL 2000.0   // Maximum ambient light for day
 #define AL_DIFF (DAY_MIN_AL - DAY_MAX_AL)
 #define PIN_LED 25
 #define PM_LED 0
@@ -488,12 +489,15 @@ void set_LEDs()
   #endif
 
   int al = analogRead(PIN_AMBIENT_LIGHT);
-  int brightness = lights_on
-    ? max(
+  bool is_night = al >= DAY_MIN_AL;
+  int brightness = lights_on * (
+    is_night
+    ? BRIGHTNESS_NIGHT
+    : max(
       AL_DIFF - max(al - DAY_MAX_AL, 0.0),
       0.0
-    ) / AL_DIFF * BRIGHTNESS_DIFF + BRIGHTNESS_NIGHT
-    : 0;
+    ) / AL_DIFF * BRIGHTNESS_DIFF + BRIGHTNESS_DAY_LOW
+  );
   pixels.setBrightness(brightness);
   pixels.show();
 }
